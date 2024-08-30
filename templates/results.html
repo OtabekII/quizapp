@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="content-wrapper" style="min-height: 600px;">
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+              <h3 class="card-title">Quiz Results Overview</h3>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                  <thead class="thead-light">
+                    <tr>
+                      <th scope="col">Quiz Title</th>
+                      <th scope="col">Total Questions</th>
+                      <th scope="col">Correct Answers</th>
+                      <th scope="col">Incorrect Answers</th>
+                      <th scope="col">Success Rate</th>
+                      <th scope="col">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for result in results %}
+                    <tr>
+                      <td>{{ result.quiz.name }}</td>
+                      <td>{{ result.questions_count }}</td>
+                      <td>{{ result.correct_answers_count }}</td>
+                      <td>{{ result.incorrect_answers_count }}</td>
+                      <td>{{ result.percentage_correct }}%</td>
+                      <td><a href="{% url 'result_detail' result.quiz.id %}" class="btn btn-sm btn-info">View</a></td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card-footer text-right">
+              <small class="text-muted">Last updated: {{ quizzes|length }} quizzes available</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+{% endblock %}

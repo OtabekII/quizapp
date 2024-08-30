@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="content-wrapper" style="min-height: 608px;">
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+          <div class="card bg-info text-white">
+            <div class="card-header">
+              <h5>Quiz Title</h5>
+            </div>
+            <div class="card-body">
+              <p>{{ quiz.name }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 col-sm-12 mb-4">
+          <div class="card bg-warning text-dark">
+            <div class="card-header">
+              <h5>Total Questions</h5>
+            </div>
+            <div class="card-body">
+              <p>{{ quiz.questions_count }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-5 col-md-6 col-sm-12 mb-4">
+          <div class="card bg-success text-white">
+            <div class="card-header">
+              <h5>Time Allocated</h5>
+            </div>
+            <div class="card-body">
+              <p>{{ quiz.amount }} minutes</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+          <div class="card bg-secondary text-white">
+            <div class="card-header">
+              <h5>Score Percentage</h5>
+            </div>
+            <div class="card-body">
+              <p>{{ p }}%</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between">
+              <h4>Questions Overview</h4>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                  <thead class="thead-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Question</th>
+                      <th>User's Choice</th>
+                      <th>Correct Answer</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for result in results %}
+                    <tr>
+                      <td>{{ forloop.counter }}</td>
+                      <td>{{ result.question.name }}</td>
+                      <td>
+                        <span class="badge badge-info">{{ result.user_choice.name }}</span>
+                      </td>
+                      <td>
+                        <span class="badge badge-warning">{{ result.correct }}</span>
+                      </td>
+                      <td>
+                        {% if result.is_correct %}
+                        <span class="badge badge-success">Correct</span>
+                        {% else %}
+                        <span class="badge badge-danger">Incorrect</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card-footer text-right">
+              <small class="text-muted">Reviewed {{ quiz.questions_count }} questions</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
