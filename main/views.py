@@ -1,6 +1,10 @@
-from django.shortcuts import render, redirect
-from . import models
+from django.shortcuts import render, redirect, get_object_or_404
+from main import models
+from .models import Quiz, Question, Answer, AnswerDetail
 from random import choice, sample
+from django.http import HttpResponse
+import openpyxl
+from django.contrib.auth.models import User
 
 def index(request):
     return render(request, 'index.html')
@@ -87,3 +91,139 @@ def deleteOption(request, ques, option):
     return redirect('questionDetail', id=ques)
 
 
+def delete_question_by_id(question_id):
+    question = get_object_or_404(Question, id=question_id)
+    quiz_id = question.quiz.id
+    question.delete()
+    return quiz_id
+
+# Delete question (Function-based View)
+def question_delete_view(request, id):
+    if request.method == 'POST':
+        quiz_id = delete_question_by_id(id)
+        return redirect('quizDetail', id=quiz_id)
+
+# Helper function to get distinct users for a quiz
+def get_users_by_quiz(quiz_id):
+    answers = Answer.objects.filter(quiz_id=quiz_id)
+    users = User.objects.filter(answer__in=answers).distinct()
+    return users
+
+# Get users and their results for a quiz
+def get_user_results_for_quiz(quiz):
+    answers = Answer.objects.filter(quiz=quiz)
+    results = []
+
+    for answer in answers:
+        answer_details = get_answer_details(answer)
+        results.append({
+            'user': answer.author.username,
+            'results': answer_details
+        })
+
+    return results
+
+# Helper function to get answer details for a user
+def get_answer_details(answer):
+    details = AnswerDetail.objects.filter(answer=answer)
+    return [{
+        'question': detail.question.name,
+        'correct_option': detail.question.correct_option.name if detail.question.correct_option else 'No option',
+        'user_choice': detail.user_choice.name,
+        'is_correct': detail.is_correct
+    } for detail in details]
+
+# View to show quiz participants and their results
+def quiz_users_view(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    results = get_user_results_for_quiz(quiz)
+    context = {'quiz': quiz, 'results': results}
+    return render(request, 'quiz_users.html', context)
+
+# Helper function to create Excel workbook for quiz answers
+def create_quiz_answers_excel(quiz, answers):
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = 'Answers'
+
+    # Headers
+    sheet['A1'] = 'Author'
+    sheet['B1'] = 'Start Time'
+    sheet['C1'] = 'End Time'
+    sheet['D1'] = 'Is Late?'
+
+    # Data rows
+    for idx, answer in enumerate(answers, start=2):
+        sheet[f'A{idx}'] = answer.author.username
+        sheet[f'B{idx}'] = answer.start_time.strftime("%Y-%m-%d %H:%M:%S") if answer.start_time else ''
+        sheet[f'C{idx}'] = answer.end_time.strftime("%Y-%m-%d %H:%M:%S") if answer.end_time else ''
+        sheet[f'D{idx}'] = 'Yes' if answer.is_late else 'No'
+
+    return workbook
+
+# Export quiz answers to Excel
+def export_quiz_answers_to_excel(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    answers = Answer.objects.filter(quiz=quiz)
+    workbook = create_quiz_answers_excel(quiz, answers)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename={quiz.name}_answers.xlsx'
+    workbook.save(response)
+    return response
+
+# Helper function to create Excel for answer details
+def create_answer_details_excel(answer, details):
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = 'Answer Details'
+
+    # Headers
+    sheet['A1'] = 'Question'
+    sheet['B1'] = 'User Choice'
+    sheet['C1'] = 'Correct?'
+
+    # Data rows
+    for idx, detail in enumerate(details, start=2):
+        sheet[f'A{idx}'] = detail.question.name
+        sheet[f'B{idx}'] = detail.user_choice.name
+        sheet[f'C{idx}'] = 'Yes' if detail.is_correct else 'No'
+
+    return workbook
+
+# Export answer details to Excel
+def export_answer_detail_to_excel(request, answer_id):
+    answer = get_object_or_404(Answer, id=answer_id)
+    answer_details = answer.answerdetail_set.all()
+    workbook = create_answer_details_excel(answer, answer_details)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename={answer.quiz.name}_answer_details.xlsx'
+    workbook.save(response)
+    return response
+
+# Helper function to generate PDF for quiz results
+def create_quiz_results_pdf(quiz, answers):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename={quiz.name}_results.pdf'
+
+    p = canvas.Canvas(response)
+    p.drawString(100, 800, f"Quiz Name: {quiz.name}")
+    p.drawString(100, 780, f"Author: {quiz.author.username}")
+    p.drawString(100, 760, "Results:")
+
+    y = 740
+    for answer in answers:
+        p.drawString(100, y, f"{answer.author.username}: {'Late' if answer.is_late else 'On Time'}")
+        y -= 20
+
+    p.showPage()
+    p.save()
+
+    return response
+
+# Export quiz results to PDF
+def render_quiz_to_pdf(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    answers = Answer.objects.filter(quiz=quiz)
+    return create_quiz_results_pdf(quiz, answers)

@@ -10,4 +10,9 @@ urlpatterns = [
     path('question-detail/<int:id>/', views.questionDetail, name='questionDetail'),
     path('create-quiz', views.createQuiz, name='createQuiz'),
     path('create-question/<int:id>/', views.questionCreate, name='questionCreate'),
+    path('question-delete/<int:id>/', views.question_delete_view, name='questionDelete'),
+    path('quiz-users/<int:quiz_id>/', views.quiz_users_view, name='quizUsers'),
+    path('export-quiz-answers/<int:quiz_id>/', views.export_quiz_answers_to_excel, name='exportQuizAnswers'),
+    path('export-answer-details/<int:answer_id>/', views.export_answer_detail_to_excel, name='exportAnswerDetails'),
+    path('export-quiz-pdf/<int:quiz_id>/', views.render_quiz_to_pdf, name='exportQuizPDF')
 ]
